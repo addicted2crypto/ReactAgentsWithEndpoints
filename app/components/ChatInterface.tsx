@@ -75,7 +75,7 @@ export default function ChatInterface({ endpoint, apiKey, systemPrompt, model, a
             <Skeleton className="h-12 w-12 rounded-md" />
             <div className="space-y-5">
               <Skeleton className="h-12 w-[12rem]" />
-              <Skeleton className="h-18 w-[18rem]" />
+              <Skeleton className="h-10 w-[18rem]" />
             </div>
           </div>
         )}
