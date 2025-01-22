@@ -1,11 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { updateChat } from "../actions/updateChat"
+
+interface Chat {
+  id: string
+  name: string
+  messages: Array<{ role: "user" | "assistant"; content: string }>
+}
 
 interface ChatInterfaceProps {
+  chat: Chat
   endpoint: string
   apiKey: string
   systemPrompt: string
@@ -13,42 +21,84 @@ interface ChatInterfaceProps {
   agentType: string
 }
 
-export default function ChatInterface({ endpoint, apiKey, systemPrompt, model, agentType }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Array<{ type: "user" | "bot"; message: string }>>([])
+export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, model, agentType }: ChatInterfaceProps) {
   const [userMessage, setUserMessage] = useState("")
+  const [messages, setMessages] = useState(chat.messages)
   const [error, setError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
 
+  useEffect(() => {
+    setMessages(chat.messages)
+  }, [chat])
+
   const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
+    if (!userMessage.trim()) return
+
     setError(null)
     setIsSending(true)
-    setMessages((prevMessages) => [...prevMessages, { type: "user", message: userMessage }])
+
+    const newUserMessage = { role: "user" as const, content: userMessage }
+    setMessages((prevMessages) => [...prevMessages, newUserMessage])
 
     try {
+
+      const updatedMessages = [...messages, newUserMessage]
+      await updateChat(chat.id, updatedMessages)
+
       const requestBody = {
         "model" : "llama2",
         "messages": [{ "role": "assistant", "content": ""}, {"role": "user", "content": userMessage }],
         "stream" : false,
-        
-        // systemPrompt,
-        // agentType,
 
       }
-      //add `${server chosen} to fetch
+
+      // console.log(
+      //   "Sending request to API:",
+      //   apiEndpoint,
+      //   JSON.stringify(
+      //     {
+      //       messages: updatedMessages,
+      //       model,
+      //       systemPrompt,
+      //       agentType,
+      //       endpoint,
+      //     },
+      //     null,
+      //     2,
+      //   ),
+      // )
+
       const response = await fetch("http://localhost:11434/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+         
+          Authorization: `Bearer ${apiKey}`,
+        },
         body: JSON.stringify(requestBody),
-      });
+      })
+
+      console.log("API response status:", response.status)
 
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`)
       }
 
       const data = await response.json()
+      console.log("API response data:", JSON.stringify(data, null, 2))
 
-      setMessages((prevMessages) => [...prevMessages, { type: "bot", message: data.message.content }])
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
+      const assistantMessage = {
+        role: "assistant" as const,
+        content: data.message?.content || data.response || "No response received",
+      }
+      setMessages((prevMessages) => [...prevMessages, assistantMessage])
+      await updateChat(chat.id, [...updatedMessages, assistantMessage])
+
       setUserMessage("")
     } catch (error) {
       console.error("Submit error:", error)
@@ -62,20 +112,20 @@ export default function ChatInterface({ endpoint, apiKey, systemPrompt, model, a
     <div className="flex-1 p-4">
       <div className="mb-4 h-[60vh] overflow-y-auto border rounded p-4">
         {messages.map((message, index) => (
-          <div key={index} className={`mb-4 ${message.type === "user" ? "text-right" : "text-left"}`}>
+          <div key={index} className={`mb-4 ${message.role === "user" ? "text-right" : "text-left"}`}>
             <span
-              className={`inline-block p-2 rounded-lg ${message.type === "user" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+              className={`inline-block p-2 rounded-lg ${message.role === "user" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
             >
-              {message.message}
+              {message.content}
             </span>
           </div>
         ))}
         {isSending && (
-          <div className="flex items-center space-x-2">
-            <Skeleton className="h-12 w-12 rounded-md" />
-            <div className="space-y-5">
-              <Skeleton className="h-12 w-[12rem]" />
-              <Skeleton className="h-10 w-[18rem]" />
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[250px]" />
+              <Skeleton className="h-4 w-[200px]" />
             </div>
           </div>
         )}

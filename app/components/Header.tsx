@@ -23,7 +23,7 @@ interface HeaderProps {
   setAgentType: (agentType: string) => void
 }
 
-const endpointModels = {
+const endpointModels: { [key: string]: string[] } = {
   "http://localhost:11434/api/chat": ["llama2", "gpt-3.5-turbo"],
   "http://localhost:2222": ["gpt-3.5-turbo", "gpt-4"],
   "https://api.anthropic.com/v1/complete": ["claude-1", "claude-2"],
@@ -53,7 +53,7 @@ export default function Header({
   const agentTypes = ["Social Media Agent", "Code Agent", "Research Agent", "Trading Agent", "Personal Assistant"]
 
   useEffect(() => {
-    if (!endpointModels[endpoint].includes(model)) {
+    if (endpointModels[endpoint] && !endpointModels[endpoint].includes(model)) {
       setModel(endpointModels[endpoint][0])
     }
   }, [endpoint, model, setModel])
@@ -94,32 +94,11 @@ export default function Header({
             <DropdownMenuContent>
               <DropdownMenuLabel>Select Model</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {endpointModels[endpoint].map((modelOption) => (
+              {endpointModels[endpoint]?.map((modelOption) => (
                 <DropdownMenuItem key={modelOption} onClick={() => setModel(modelOption)}>
                   {modelOption}
                 </DropdownMenuItem>
               ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="bg-blue-200 hover:bg-blue-300 text-gray-800 transition-colors duration-200 w-full sm:w-auto"
-              >
-                System Prompt
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Set System Prompt</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="p-2">
-                <Input
-                  value={systemPrompt}
-                  onChange={(e) => setSystemPrompt(e.target.value)}
-                  placeholder="Enter system prompt"
-                />
-              </div>
             </DropdownMenuContent>
           </DropdownMenu>
           <DropdownMenu>

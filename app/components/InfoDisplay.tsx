@@ -5,12 +5,12 @@ interface InfoDisplayProps {
   systemPrompt: string
   model: string
   agentType: string
-  setShowInfo: (show: boolean) => void
+  onToggle: () => void
 }
 
-export default function InfoDisplay({ endpoint, systemPrompt, model, agentType, setShowInfo }: InfoDisplayProps) {
+export default function InfoDisplay({ endpoint, systemPrompt, model, agentType, onToggle }: InfoDisplayProps) {
   return (
-    <div className="bg-gray-100 p-4 flex justify-between items-center">
+    <div className="bg-gray-100 p-4 flex justify-between items-center relative">
       <div>
         <p>
           <strong>Endpoint:</strong> {endpoint}
@@ -25,7 +25,7 @@ export default function InfoDisplay({ endpoint, systemPrompt, model, agentType, 
           <strong>Agent Type:</strong> {agentType}
         </p>
       </div>
-      <Button onClick={() => setShowInfo(false)} variant="outline">
+      <Button onClick={onToggle} className="absolute top-2 right-2">
         Hide
       </Button>
     </div>
