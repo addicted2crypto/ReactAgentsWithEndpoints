@@ -67,7 +67,7 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
       //     null,
       //     2,
       //   ),
-      // )
+      // ) add will directly need endpoint in place of endpoint localhost
 
       const response = await fetch("http://localhost:11434/api/chat", {
         method: "POST",

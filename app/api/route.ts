@@ -43,13 +43,13 @@ export async function POST(req: Request) {
       data = JSON.parse(responseText)
     } catch (error) {
       console.error("Error parsing JSON:", error)
-      // If parsing fails, treat the entire response as the message content
+      
       return NextResponse.json({ message: { content: responseText.trim() } })
     }
 
     console.log("Parsed response data:", JSON.stringify(data, null, 2))
 
-    // Ensure the response has the expected structure
+   
     if (!data.message) {
       data = { message: { content: data.response || responseText.trim() } }
     }
