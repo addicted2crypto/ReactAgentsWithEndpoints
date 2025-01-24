@@ -35,14 +35,15 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
     e.preventDefault()
     if (!userMessage.trim()) return
 
+    const messageContent = userMessage
+    setUserMessage("") // Clear input immediately
     setError(null)
     setIsSending(true)
 
-    const newUserMessage = { role: "user" as const, content: userMessage }
+    const newUserMessage = { role: "user" as const, content: messageContent }
     setMessages((prevMessages) => [...prevMessages, newUserMessage])
 
     try {
-
       const updatedMessages = [...messages, newUserMessage]
       await updateChat(chat.id, updatedMessages)
 
@@ -67,17 +68,19 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
       //     null,
       //     2,
       //   ),
-      // ) add will directly need endpoint in place of endpoint localhost
+      // )
 
-      const response = await fetch("http://localhost:11434/api/chat", {
+      const response = await fetch("http://localhost:11434/api/chat" , {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-         
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify(requestBody),
-      })
+         //add auth for non local
+          // Authorization: `Bearer ${apiKey}`,
+        
+      },
+      body: JSON.stringify(requestBody),
+    }) 
+      
 
       console.log("API response status:", response.status)
 
@@ -86,7 +89,8 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
       }
 
       const data = await response.json()
-      console.log("API response data:", JSON.stringify(data, null, 2))
+
+      console.log("API RESPONSE DATA CHATINTERFACE:", JSON.stringify(data, null, 2))
 
       if (data.error) {
         throw new Error(data.error)
@@ -94,12 +98,10 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
 
       const assistantMessage = {
         role: "assistant" as const,
-        content: data.message?.content || data.response || "No response received",
+        content: data.message?.content || data.choices?.[0]?.message?.content || "No response content",
       }
       setMessages((prevMessages) => [...prevMessages, assistantMessage])
       await updateChat(chat.id, [...updatedMessages, assistantMessage])
-
-      setUserMessage("")
     } catch (error) {
       console.error("Submit error:", error)
       setError(`An error occurred: ${error instanceof Error ? error.message : "Unknown error"}`)
