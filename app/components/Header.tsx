@@ -9,6 +9,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import PromptManager from "./PromptManager"
+import type { Prompt, EndpointPrompts } from "../types/prompts"
 
 interface HeaderProps {
   endpoint: string
@@ -30,6 +32,21 @@ const endpointModels: { [key: string]: string[] } = {
   "https://api.openai.com/v1/chat/completions": ["gpt-3.5-turbo", "gpt-4"],
 }
 
+const defaultPrompts: Prompt[] = [
+  {
+    id: "reflection",
+    name: "Reflection Prompt",
+    content: `You are a world-class AI system, capable of complex reasoning and reflection. 
+Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. 
+If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags.`,
+  },
+  {
+    id: "basic",
+    name: "Basic Assistant",
+    content: "You are a helpful assistant focused on clear and concise responses.",
+  },
+]
+
 export default function Header({
   endpoint,
   setEndpoint,
@@ -43,20 +60,57 @@ export default function Header({
   setAgentType,
 }: HeaderProps) {
   const [showApiKeyForm, setShowApiKeyForm] = useState(false)
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>("reflection")
+  const [endpointPrompts, setEndpointPrompts] = useState<EndpointPrompts>(() => {
+    if (typeof window !== "undefined") {
+      const savedPrompts = localStorage.getItem("endpointPrompts")
+      return savedPrompts
+        ? JSON.parse(savedPrompts)
+        : {
+            "http://localhost:11434/api/chat": defaultPrompts,
+          }
+    }
+    return {
+      "http://localhost:11434/api/chat": defaultPrompts,
+    }
+  })
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("endpointPrompts", JSON.stringify(endpointPrompts))
+    }
+  }, [endpointPrompts])
 
   const handleEndpointChange = (newEndpoint: string) => {
     setEndpoint(newEndpoint)
     setShowApiKeyForm(true)
-    setModel(endpointModels[newEndpoint][0]) // Set default model for the new endpoint
+    setModel(endpointModels[newEndpoint][0])
+
+    // Initialize prompts for new endpoint if they don't exist
+    if (!endpointPrompts[newEndpoint]) {
+      setEndpointPrompts((prev: any) => ({
+        ...prev,
+        [newEndpoint]: defaultPrompts,
+      }))
+    }
+  }
+
+  const handleAddPrompt = (prompt: Prompt) => {
+    setEndpointPrompts((prev: any) => ({
+      ...prev,
+      [endpoint]: [...(prev[endpoint] || []), prompt],
+    }))
+  }
+
+  const handleSelectPrompt = (promptId: string) => {
+    setSelectedPromptId(promptId)
+    const selectedPrompt = endpointPrompts[endpoint]?.find((p) => p.id === promptId)
+    if (selectedPrompt) {
+      setSystemPrompt(selectedPrompt.content)
+    }
   }
 
   const agentTypes = ["Social Media Agent", "Code Agent", "Research Agent", "Trading Agent", "Personal Assistant"]
-
-  useEffect(() => {
-    if (endpointModels[endpoint] && !endpointModels[endpoint].includes(model)) {
-      setModel(endpointModels[endpoint][0])
-    }
-  }, [endpoint, model, setModel])
 
   return (
     <header className="bg-gray-800 text-white p-4">
@@ -82,6 +136,7 @@ export default function Header({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -101,6 +156,14 @@ export default function Header({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <PromptManager
+            prompts={endpointPrompts[endpoint] || []}
+            onAddPrompt={handleAddPrompt}
+            onSelectPrompt={handleSelectPrompt}
+            selectedPromptId={selectedPromptId}
+          />
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

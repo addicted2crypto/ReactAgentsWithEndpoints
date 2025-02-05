@@ -2,38 +2,36 @@ import { NextResponse } from "next/server"
 
 export const runtime = "edge"
 
-const OLLAMA_ENDPOINT = "http://localhost:11434/api/chat"
-
 export async function POST(req: Request) {
   console.log("API route hit")
   try {
     const { messages, model, systemPrompt, agentType, endpoint } = await req.json()
     console.log("Received request:", { messages, model, systemPrompt, agentType, endpoint })
 
-    // Check if the endpoint is for Ollama
-    if (endpoint.includes("localhost:11434")) {
-      const ollamaMessages = [
-        // Add system message if there's a system prompt
-        ...(systemPrompt ? [{ role: "system", content: `${systemPrompt} You are a ${agentType}.` }] : []),
-        // Add the conversation history
-        ...messages,
-      ]
-
+    // For Ollama endpoint, format according to their API requirements
+    if (endpoint.includes("localhost:2222")) {
+      const ollamaEndpoint = "http://localhost:2222/api/chat"
       const requestBody = {
-        model: model || "llama2",
-        messages: ollamaMessages,
+        model: "phi4:14b-q8_0",
+        // || "llama2",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          ...messages.filter((m: any) => m.role === "user" || m.role === "assistant"),
+        ],
         stream: false,
       }
 
       console.log("Sending Ollama request:", JSON.stringify(requestBody, null, 2))
 
-      const response = await fetch(OLLAMA_ENDPOINT, {
+      const response = await fetch(ollamaEndpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        mode: "cors",
+        headers: { "Content-Type": "gzip,deflate, br, application/json" },
         body: JSON.stringify(requestBody),
       })
-
-      console.log("Ollama response status:", response.status)
 
       if (!response.ok) {
         throw new Error(`Ollama API request failed with status ${response.status}`)
@@ -44,38 +42,15 @@ export async function POST(req: Request) {
 
       try {
         const data = JSON.parse(responseText)
-        return NextResponse.json({
-          message: { content: data.message?.content || data.response || responseText.trim() },
-        })
+        return NextResponse.json({ message: { content: data.message?.content || responseText.trim() } })
       } catch (error) {
-        console.error("Error parsing Ollama JSON:", error)
         return NextResponse.json({ message: { content: responseText.trim() } })
       }
-    } else {
-      //add Handle other endpoints (OpenAI, etc.) with their specific formats
-      const requestBody = {
-        model: model,
-        messages: [{ role: "system", content: `${systemPrompt} You are a ${agentType}.` }, ...messages],
-      }
-
-      console.log("Sending request to external API:", JSON.stringify(requestBody, null, 2))
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.API_KEY}`,
-        },
-        body: JSON.stringify(requestBody),
-      })
-
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`)
-      }
-
-      const data = await response.json()
-      return NextResponse.json(data)
     }
+
+    //Add Handle other endpoints here...
+    //Use Default response format
+    return NextResponse.json({ error: "Endpoint not supported" }, { status: 400 })
   } catch (error: any) {
     console.error("Error in chat route:", error)
     return NextResponse.json({ error: error.message || "An error occurred during the chat request" }, { status: 500 })

@@ -35,24 +35,17 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
     e.preventDefault()
     if (!userMessage.trim()) return
 
-    const messageContent = userMessage
-    setUserMessage("") // Clear input immediately
     setError(null)
     setIsSending(true)
 
-    const newUserMessage = { role: "user" as const, content: messageContent }
+    const newUserMessage = { role: "user" as const, content: userMessage }
     setMessages((prevMessages) => [...prevMessages, newUserMessage])
 
     try {
       const updatedMessages = [...messages, newUserMessage]
       await updateChat(chat.id, updatedMessages)
 
-      const requestBody = {
-        "model" : "llama2",
-        "messages": [{ "role": "assistant", "content": ""}, {"role": "user", "content": userMessage }],
-        "stream" : false,
-
-      }
+      // const apiEndpoint = endpoint.includes("localhost") ? "/api/chat" : endpoint
 
       // console.log(
       //   "Sending request to API:",
@@ -61,26 +54,34 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
       //     {
       //       messages: updatedMessages,
       //       model,
-      //       systemPrompt,
+      //       // systemPrompt,
       //       agentType,
-      //       endpoint,
+      //       // endpoint,
       //     },
       //     null,
       //     2,
       //   ),
       // )
 
-      const response = await fetch("http://localhost:11434/api/chat" , {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-         //add auth for non local
-          // Authorization: `Bearer ${apiKey}`,
+      const response = await fetch("http://localhost:11434/api/chat", {
         
-      },
-      body: JSON.stringify(requestBody),
-    }) 
-      
+        method: "POST",
+        // mode: "no-cors",
+        headers: {
+         
+          "Content-Type":"application/json;",
+          // Authorization: `Bearer ${apiKey}`,
+        },
+       
+        body: JSON.stringify({
+          messages: updatedMessages,
+          model: "llama2",
+          // model : "phi4:14b-q8_0",
+          // systemPrompt,
+          // agentType,
+          // endpoint,
+        }),
+      })
 
       console.log("API response status:", response.status)
 
@@ -89,8 +90,17 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
       }
 
       const data = await response.json()
+      console.log("Raw API response:", data)
 
-      console.log("API RESPONSE DATA CHATINTERFACE:", JSON.stringify(data, null, 2))
+      // let data
+      // try {
+      //   data = JSON.parse(responseText)
+      // } catch (error) {
+      //   console.error("Error parsing JSON:", error)
+      //   data = { message: { content: responseText.trim() } }
+      // }
+
+      console.log("Parsed API response data:", JSON.stringify(data, null, 2))
 
       if (data.error) {
         throw new Error(data.error)
@@ -98,10 +108,13 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
 
       const assistantMessage = {
         role: "assistant" as const,
-        content: data.message?.content || data.choices?.[0]?.message?.content || "No response content",
+        // content: data.message?.content || data.response || responseText.trim(),
+        content: data.message?.content.trim(),
       }
       setMessages((prevMessages) => [...prevMessages, assistantMessage])
       await updateChat(chat.id, [...updatedMessages, assistantMessage])
+
+      setUserMessage("")
     } catch (error) {
       console.error("Submit error:", error)
       setError(`An error occurred: ${error instanceof Error ? error.message : "Unknown error"}`)
