@@ -45,6 +45,13 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
       const updatedMessages = [...messages, newUserMessage]
       await updateChat(chat.id, updatedMessages)
 
+      const requestBody = {
+        "system" : "You are a world-class AI system, capable of complex reasoning and reflection. Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags",
+        "model": "llama2",
+        // "model": "llama3.3:70b-instruct-q4_0",
+        "messages": [{"role": "assistant", "content": ""}, { "role": "user", "content": userMessage }],
+        "stream": false
+    };
       // const apiEndpoint = endpoint.includes("localhost") ? "/api/chat" : endpoint
 
       // console.log(
@@ -73,16 +80,8 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
           // Authorization: `Bearer ${apiKey}`,
         },
        
-        body: JSON.stringify({
-          messages: updatedMessages,
-          model: "llama2",
-          // model : "phi4:14b-q8_0",
-          // systemPrompt,
-          // agentType,
-          // endpoint,
-        }),
-      })
-
+        body: JSON.stringify(requestBody),
+      });
       console.log("API response status:", response.status)
 
       if (!response.ok) {
@@ -109,7 +108,7 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
       const assistantMessage = {
         role: "assistant" as const,
         // content: data.message?.content || data.response || responseText.trim(),
-        content: data.message?.content.trim(),
+        content: data.message.content,
       }
       setMessages((prevMessages) => [...prevMessages, assistantMessage])
       await updateChat(chat.id, [...updatedMessages, assistantMessage])
