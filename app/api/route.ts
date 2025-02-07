@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
       const response = await fetch(ollamaEndpoint, {
         method: "POST",
-        mode: "cors",
+        mode: "no-cors",
         headers: { "Content-Type": "gzip,deflate, br, application/json" },
         body: JSON.stringify(requestBody),
       })

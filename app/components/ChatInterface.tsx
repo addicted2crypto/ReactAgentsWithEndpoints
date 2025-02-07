@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { updateChat } from "../actions/updateChat"
+import { POST } from '../api/route'
 
 interface Chat {
   id: string
@@ -47,7 +48,8 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
 
       const requestBody = {
         "system" : "You are a world-class AI system, capable of complex reasoning and reflection. Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags",
-        "model": "llama2",
+        "model": "llama3.3:70b-instruct-q4_0",
+        // "model": "llama2",
         // "model": "llama3.3:70b-instruct-q4_0", "phi4:14b-q8_0", "dolphin-mistral:7b-v2-fp16"
         "messages": [{"role": "assistant", "content": ""}, { "role": "user", "content": userMessage }],
         "stream": false
@@ -69,11 +71,12 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
       //     2,
       //   ),
       // )
-
+        //  const response =  POST
       const response = await fetch("http://localhost:2222/api/chat", {
-        
+      
         method: "POST",
-        // mode: "no-cors",
+        mode: "no-cors",
+      
         headers: {
          
           "Content-Type":"application/json;",
@@ -82,8 +85,11 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
        
         body: JSON.stringify(requestBody),
       });
-      console.log("API response status:", response.status)
-
+      console.log("API response status:", response.status);
+      console.log(requestBody.messages);
+      console.log(requestBody.model);
+      console.log(requestBody.system);
+      console.log(response);
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`)
       }
