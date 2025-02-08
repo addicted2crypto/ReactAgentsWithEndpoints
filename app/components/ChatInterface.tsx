@@ -48,7 +48,7 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
 
       const requestBody = {
         "system" : "You are a world-class AI system, capable of complex reasoning and reflection. Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags",
-        "model": "llama3.3:70b-instruct-q4_0",
+        "model": "dolphin-mistral:7b-v2-fp16",
         // "model": "llama2",
         // "model": "llama3.3:70b-instruct-q4_0", "phi4:14b-q8_0", "dolphin-mistral:7b-v2-fp16"
         "messages": [{"role": "assistant", "content": ""}, { "role": "user", "content": userMessage }],
