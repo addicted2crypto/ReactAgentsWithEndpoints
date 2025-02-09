@@ -73,14 +73,13 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
       // )
         //  const response =  POST
       const response = await fetch("http://localhost:2222/api/chat", {
-      
-        method: "POST",
-        mode: "no-cors",
+        
+        method:  "POST",
+        mode: "cors",
       
         headers: {
-         
-          "Content-Type":"application/json;",
-          // Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
         },
        
         body: JSON.stringify(requestBody),
@@ -91,7 +90,8 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
       console.log(requestBody.system);
       console.log(response);
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`)
+        const errorResponse = await response.text();
+        throw new Error(`HTTP Error status: ${response.status} - ${errorResponse}`);
       }
 
       const data = await response.json()
