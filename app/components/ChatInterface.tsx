@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { updateChat } from "../actions/updateChat"
 
 
+const apiKey = "nAdyvi5LI1o; Path=/; Secure;"
 interface Chat {
   id: string
   name: string
@@ -78,8 +79,11 @@ export default function ChatInterface({ chat, endpoint, apiKey, systemPrompt, mo
         mode: "cors",
       
         headers: {
+          "Access-Control-Allow-Origin": "*",
+          // "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, HEAD, OPTIONS",
+          // "Access-Control-Allow-Origin": "*",
           "Content-Type": "application/json",
-          "x-api-key": apiKey,
+          
         },
        
         body: JSON.stringify(requestBody),
