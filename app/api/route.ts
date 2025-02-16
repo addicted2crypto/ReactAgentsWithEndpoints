@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const { messages, model, systemPrompt, agentType, endpoint } = await req.json()
     console.log("Received request:", { messages, model, systemPrompt, agentType, endpoint })
 
-    // For Ollama endpoint, format according to their API requirements
+    // For Ollama endpoint, format according to API requirementsin docs for all endpoints
     if (endpoint.includes("localhost:2222")) {
       const ollamaEndpoint = "http://localhost:2222/api/chat"
       const requestBody = {
